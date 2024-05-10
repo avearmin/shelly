@@ -7,9 +7,6 @@ import (
 
 func Load(filepath string, model any) error {
 	data, err := os.ReadFile(filepath)
-	if os.IsNotExist(err) {
-		return nil
-	}
 	if err != nil {
 		return err
 	}
