@@ -5,35 +5,27 @@ import (
 	"os"
 )
 
-type Command struct {
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	Action      string `json:"Action"`
-}
-
-func LoadCommands(filepath string) (map[string]Command, error) {
-	commands := make(map[string]Command)
-
+func Load(filepath string, model any) error {
 	data, err := os.ReadFile(filepath)
 	if os.IsNotExist(err) {
-		return commands, nil
+		return nil
 	}
-	if err != nil {
-		return nil, err
-	}
-
-	if err := json.Unmarshal(data, &commands); err != nil {
-		return nil, err
-	}
-
-	return commands, nil
-}
-
-func SaveCommands(filepath string, commands map[string]Command) error {
-	data, err := json.Marshal(commands)
 	if err != nil {
 		return err
 	}
 
-	return os.WriteFile(filepath, data, 0666)
+	if err := json.Unmarshal(data, &model); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func Save(filepath string, data any) error {
+	marshalData, err := json.Marshal(data)
+	if err != nil {
+		return err
+	}
+
+	return os.WriteFile(filepath, marshalData, 0666)
 }
