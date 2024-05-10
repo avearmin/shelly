@@ -2,6 +2,8 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/avearmin/shelly/internal/cmdstore"
+	"github.com/avearmin/shelly/internal/configstore"
 	"github.com/spf13/cobra"
 	"os"
 )
@@ -26,8 +28,21 @@ var initCmd = &cobra.Command{
 			os.Mkdir(homeDir+"/.config/shelly/", 0755)
 		}
 
-		if _, err := os.Stat(homeDir + "/.config/shelly/commands.json"); err != nil {
-			os.Create(homeDir + "/.config/shelly/commands.json")
+		if _, err := os.Stat(cmdstore.GetDefaultPath()); err != nil {
+			os.Create(cmdstore.GetDefaultPath())
+		}
+
+		if _, err := os.Stat(configstore.GetPath()); err != nil {
+			configstore.Create()
+			config, err := configstore.Load()
+			if err != nil {
+				config = configstore.Config{}
+			}
+			config.CmdsPath = cmdstore.GetDefaultPath()
+			if err = configstore.Save(config); err != nil {
+				fmt.Fprintln(os.Stderr, err)
+				os.Exit(1)
+			}
 		}
 
 		fmt.Println("shelly has been successfully initalized!")
