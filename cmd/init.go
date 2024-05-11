@@ -30,16 +30,17 @@ var initCmd = &cobra.Command{
 
 		if _, err := os.Stat(cmdstore.GetDefaultPath()); err != nil {
 			os.Create(cmdstore.GetDefaultPath())
+			cmds := make(map[string]cmdstore.Command)
+			if err := cmdstore.Save(cmdstore.GetDefaultPath(), cmds); err != nil {
+				fmt.Fprintln(os.Stderr, err)
+				os.Exit(1)
+			}
 		}
 
-		if _, err := os.Stat(configstore.GetPath()); err != nil {
+		if !configstore.Exists() {
 			configstore.Create()
-			config, err := configstore.Load()
-			if err != nil {
-				config = configstore.Config{}
-			}
-			config.CmdsPath = cmdstore.GetDefaultPath()
-			if err = configstore.Save(config); err != nil {
+			config := configstore.Config{ CmdsPath: cmdstore.GetDefaultPath() }
+			if err := configstore.Save(config); err != nil {
 				fmt.Fprintln(os.Stderr, err)
 				os.Exit(1)
 			}

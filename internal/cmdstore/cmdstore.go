@@ -14,7 +14,7 @@ type Command struct {
 func Load(filepath string) (map[string]Command, error) {
 	cmds := make(map[string]Command)
 
-	if err := storage.Load(filepath, cmds); err != nil {
+	if err := storage.Load(filepath, &cmds); err != nil {
 		return nil, err
 	}
 

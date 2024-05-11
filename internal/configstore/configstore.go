@@ -1,6 +1,7 @@
 package configstore
 
 import (
+	"errors"	
 	"os"
 	"github.com/avearmin/shelly/internal/storage"
 )
@@ -12,7 +13,7 @@ type Config struct {
 func Load() (Config, error) {
 	config := Config{}
 
-	if err := storage.Load(GetPath(), config); err != nil {
+	if err := storage.Load(GetPath(), &config); err != nil {
 		return Config{}, err
 	}
 
@@ -35,4 +36,11 @@ func GetPath() string {
 func Create() error {
 	_, err := os.Create(GetPath())
 	return err
+}
+
+func Exists() bool {
+	if _, err := os.Stat(GetPath()); errors.Is(err, os.ErrNotExist) {
+		return false
+	}
+	return true
 }

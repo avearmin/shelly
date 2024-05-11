@@ -11,7 +11,7 @@ func Load(filepath string, model any) error {
 		return err
 	}
 
-	if err := json.Unmarshal(data, &model); err != nil {
+	if err := json.Unmarshal(data, model); err != nil {
 		return err
 	}
 
