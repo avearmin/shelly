@@ -6,21 +6,21 @@ import (
 	"github.com/avearmin/shelly/internal/configstore"
 	"github.com/spf13/cobra"
 	"os"
+	"os/exec"
+	"strings"
 )
 
 func init() {
-	rootCmd.AddCommand(addCmd)
+	rootCmd.AddCommand(execCmd)
 }
 
-var addCmd = &cobra.Command{
-	Use:   "add",
-	Short: "Add an alias and shell command.",
-	Long: `Add an alias and shell command to be managed by shelly. You can
-		delete this command using 'shelly del'.`,
+var execCmd = &cobra.Command{
+	Use:   "exec",
+	Short: "Execute an shell command using shelly.",
+	Long:  "Execute a saved shell command using the assigned alias.",
 	Run: func(cmd *cobra.Command, args []string) {
 		if !configstore.Exists() {
 			fmt.Fprintln(os.Stderr, "shelly config doesn't exist. Please run 'shelly init'")
-			os.Exit(1)
 		}
 
 		config, err := configstore.Load()
@@ -35,17 +35,21 @@ var addCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		cmds[args[0]] = cmdstore.Command{
-			Name:        args[0],
-			Description: args[1],
-			Action:      args[2],
-		}
+		cmdParts := strings.Fields(cmds[args[0]].Action)
 
-		if err := cmdstore.Save(config.CmdsPath, cmds); err != nil {
+		action := exec.Command(cmdParts[0], cmdParts[1:]...)
+
+		action.Stdin = os.Stdin
+		action.Stdout = os.Stdout
+		action.Stderr = os.Stderr
+
+		if err := action.Start(); err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			os.Exit(1)
 		}
-
-		os.Exit(0)
+		if err := action.Wait(); err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
 	},
 }

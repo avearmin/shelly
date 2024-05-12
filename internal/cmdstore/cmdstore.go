@@ -1,14 +1,14 @@
 package cmdstore
 
 import (
-	"os"
 	"github.com/avearmin/shelly/internal/storage"
+	"os"
 )
 
 type Command struct {
-	Name string `json:"name"`
+	Name        string `json:"name"`
 	Description string `json:"description"`
-	Action string `json:"action"`
+	Action      string `json:"action"`
 }
 
 func Load(filepath string) (map[string]Command, error) {

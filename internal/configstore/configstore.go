@@ -1,9 +1,9 @@
 package configstore
 
 import (
-	"errors"	
-	"os"
+	"errors"
 	"github.com/avearmin/shelly/internal/storage"
+	"os"
 )
 
 type Config struct {

@@ -39,7 +39,7 @@ var initCmd = &cobra.Command{
 
 		if !configstore.Exists() {
 			configstore.Create()
-			config := configstore.Config{ CmdsPath: cmdstore.GetDefaultPath() }
+			config := configstore.Config{CmdsPath: cmdstore.GetDefaultPath()}
 			if err := configstore.Save(config); err != nil {
 				fmt.Fprintln(os.Stderr, err)
 				os.Exit(1)
