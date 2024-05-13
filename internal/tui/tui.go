@@ -9,6 +9,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"os"
 	"os/exec"
+	"sort"
 	"strings"
 )
 
@@ -58,26 +59,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Quit
 		default:
 			if m.input.Focused() {
-				cmdsPath, err := configstore.GetCmdsPath()
-				if err != nil {
-					tea.Println(err)
-					return m, tea.Quit
-				}
-				searchCmds, err := cmdstore.LoadThatContains(cmdsPath, m.input.Value())
-				if err != nil {
-					tea.Println(err)
-					return m, tea.Quit
-				}
-				
-				searchRows := []table.Row{}
+				m.table.SetRows(filterRows(m.originalRows, m.input.Value()))
 
-				for _, v := range searchCmds {
-					searchRows = append(searchRows, table.Row{v.Name, v.Description, v.Action})
-				}
-
-
-				m.table.SetRows(searchRows)
-				
 				updateInput, cmd := m.input.Update(msg)
 				m.input = updateInput
 
@@ -122,6 +105,10 @@ func Start() error {
 		rows = append(rows, table.Row{v.Name, v.Description, v.Action})
 	}
 
+	sort.Slice(rows, func(i, j int) bool {
+		return rows[i][0] < rows[j][0] 
+	})
+
 	t := table.New(
 		table.WithColumns(columns),
 		table.WithRows(rows),
@@ -146,4 +133,20 @@ func Start() error {
 		return err
 	}
 	return nil
+}
+
+func filterRows(rows []table.Row, s string) []table.Row {
+	filterRows := []table.Row{}
+
+	for _, v := range rows {
+		if strings.Contains(v[0], s) {
+			filterRows = append(filterRows, v)
+		} else if strings.Contains(v[1], s) {
+			filterRows = append(filterRows, v)
+		} else if strings.Contains(v[2], s) {
+			filterRows = append(filterRows, v)
+		}
+	}
+
+	return filterRows
 }
