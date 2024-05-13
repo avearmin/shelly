@@ -43,31 +43,26 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "ctrl+c":
 			return m, tea.Quit
 		case "enter":
-			cmdParts := strings.Fields(m.table.SelectedRow()[2])
-
-			action := exec.Command(cmdParts[0], cmdParts[1:]...)
-
-			action.Stdin = os.Stdin
-			action.Stdout = os.Stdout
-			action.Stderr = os.Stderr
-
-			if err := action.Run(); err != nil {
-				tea.Println(err)
-				return m, tea.Quit
-			}
-
-			return m, tea.Quit
-		default:
 			if m.input.Focused() {
 				m.table.SetRows(filterRows(m.originalRows, m.input.Value()))
+			} else {
+				cmdParts := strings.Fields(m.table.SelectedRow()[2])
+			
+				action := exec.Command(cmdParts[0], cmdParts[1:]...)
 
-				updateInput, cmd := m.input.Update(msg)
-				m.input = updateInput
+				action.Stdin = os.Stdin
+				action.Stdout = os.Stdout
+				action.Stderr = os.Stderr
 
-				return m, cmd
+				if err := action.Run(); err != nil {
+					tea.Println(err)
+					return m, tea.Quit
+				}
+
+				return m, tea.Quit
 			}
 		}
-	}
+	}	
 
 	updateInput, inputCmd := m.input.Update(msg)
 	updateTable, tableCmd := m.table.Update(msg)
@@ -79,7 +74,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m model) View() string {
-	return baseStyle.Render(m.table.View()) + "\n" + m.input.View() + "\n"
+	return baseStyle.Render(m.table.View()) + "\n" + m.input.View() + "\nctrl+c : quit | esc : switch view | enter (table) : run cmd | enter (input): run search\n"
 }
 
 func Start() error {
