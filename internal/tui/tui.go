@@ -5,6 +5,7 @@ import (
 	"github.com/avearmin/shelly/internal/cmdstore"
 	"github.com/avearmin/shelly/internal/configstore"
 	"github.com/charmbracelet/bubbles/table"
+	"github.com/charmbracelet/bubbles/textinput"
 	"github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"os"
@@ -17,7 +18,9 @@ var baseStyle = lipgloss.NewStyle().
 	BorderForeground(lipgloss.Color("240"))
 
 type model struct {
-	table table.Model
+	table        table.Model
+	input        textinput.Model
+	originalRows []table.Row
 }
 
 func (m model) Init() tea.Cmd {
@@ -25,8 +28,6 @@ func (m model) Init() tea.Cmd {
 }
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	var cmd tea.Cmd
-
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 
@@ -34,10 +35,12 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "esc":
 			if m.table.Focused() {
 				m.table.Blur()
+				m.input.Focus()
 			} else {
+				m.input.Blur()
 				m.table.Focus()
 			}
-		case "ctrl+c", "q":
+		case "ctrl+c":
 			return m, tea.Quit
 		case "enter":
 			cmdParts := strings.Fields(m.table.SelectedRow()[2])
@@ -56,12 +59,18 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Quit
 		}
 	}
-	m.table, cmd = m.table.Update(msg)
-	return m, cmd
+	
+	updateInput, inputCmd := m.input.Update(msg)
+	updateTable, tableCmd := m.table.Update(msg)
+	
+	m.input = updateInput
+	m.table = updateTable
+	
+	return m, tea.Batch(inputCmd, tableCmd)
 }
 
 func (m model) View() string {
-	return baseStyle.Render(m.table.View()) + "\n"
+	return baseStyle.Render(m.table.View()) + "\n" + m.input.View() + "\n"
 }
 
 func Start() error {
@@ -106,7 +115,7 @@ func Start() error {
 		Bold(false)
 	t.SetStyles(s)
 
-	m := model{t}
+	m := model{table: t, input: textinput.New(), originalRows: rows}
 	if _, err := tea.NewProgram(m).Run(); err != nil {
 		return err
 	}
