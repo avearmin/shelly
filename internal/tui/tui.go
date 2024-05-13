@@ -1,7 +1,6 @@
 package tui
 
 import (
-	"fmt"
 	"github.com/avearmin/shelly/internal/cmdstore"
 	"github.com/avearmin/shelly/internal/configstore"
 	"github.com/charmbracelet/bubbles/table"
@@ -52,20 +51,47 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			action.Stderr = os.Stderr
 
 			if err := action.Run(); err != nil {
-				fmt.Fprintln(os.Stderr, err)
+				tea.Println(err)
 				return m, tea.Quit
 			}
 
 			return m, tea.Quit
+		default:
+			if m.input.Focused() {
+				cmdsPath, err := configstore.GetCmdsPath()
+				if err != nil {
+					tea.Println(err)
+					return m, tea.Quit
+				}
+				searchCmds, err := cmdstore.LoadThatContains(cmdsPath, m.input.Value())
+				if err != nil {
+					tea.Println(err)
+					return m, tea.Quit
+				}
+				
+				searchRows := []table.Row{}
+
+				for _, v := range searchCmds {
+					searchRows = append(searchRows, table.Row{v.Name, v.Description, v.Action})
+				}
+
+
+				m.table.SetRows(searchRows)
+				
+				updateInput, cmd := m.input.Update(msg)
+				m.input = updateInput
+
+				return m, cmd
+			}
 		}
 	}
-	
+
 	updateInput, inputCmd := m.input.Update(msg)
 	updateTable, tableCmd := m.table.Update(msg)
-	
+
 	m.input = updateInput
 	m.table = updateTable
-	
+
 	return m, tea.Batch(inputCmd, tableCmd)
 }
 
