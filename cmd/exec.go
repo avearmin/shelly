@@ -43,11 +43,7 @@ var execCmd = &cobra.Command{
 		action.Stdout = os.Stdout
 		action.Stderr = os.Stderr
 
-		if err := action.Start(); err != nil {
-			fmt.Fprintln(os.Stderr, err)
-			os.Exit(1)
-		}
-		if err := action.Wait(); err != nil {
+		if err := action.Run(); err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			os.Exit(1)
 		}

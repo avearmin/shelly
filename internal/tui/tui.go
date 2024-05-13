@@ -43,20 +43,17 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			cmdParts := strings.Fields(m.table.SelectedRow()[2])
 
 			action := exec.Command(cmdParts[0], cmdParts[1:]...)
+
 			action.Stdin = os.Stdin
 			action.Stdout = os.Stdout
 			action.Stderr = os.Stderr
 
-			if err := action.Start(); err != nil {
+			if err := action.Run(); err != nil {
 				fmt.Fprintln(os.Stderr, err)
-				os.Exit(1)
-			}
-			if err := action.Wait(); err != nil {
-				fmt.Fprintln(os.Stderr, err)
-				os.Exit(1)
+				return m, tea.Quit
 			}
 
-			os.Exit(0)
+			return m, tea.Quit
 		}
 	}
 	m.table, cmd = m.table.Update(msg)
