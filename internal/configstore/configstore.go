@@ -44,3 +44,12 @@ func Exists() bool {
 	}
 	return true
 }
+
+func GetCmdsPath() (string, error) {
+	config, err := Load()
+	if err != nil {
+		return "", err
+	}
+
+	return config.CmdsPath, nil
+}

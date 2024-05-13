@@ -2,8 +2,10 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/avearmin/shelly/internal/tui"
 	"github.com/spf13/cobra"
 	"log"
+	"os"
 )
 
 var rootCmd = &cobra.Command{
@@ -12,7 +14,10 @@ var rootCmd = &cobra.Command{
 	Long: `shelly allows you to save aliases, delete them, and execute 
 	their underlying shell commands all from a central location.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("There will be a full TUI here soon!")
+		if err := tui.Start(); err != nil {
+			fmt.Printf("Alas, there's been an error: %v", err)
+			os.Exit(1)
+		}
 	},
 }
 
