@@ -7,8 +7,6 @@ import (
 	"github.com/charmbracelet/bubbles/textinput"
 	"github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"os"
-	"os/exec"
 	"sort"
 	"strings"
 )
@@ -21,6 +19,7 @@ type model struct {
 	table        table.Model
 	input        textinput.Model
 	originalRows []table.Row
+	selectedCmd string
 }
 
 func (m model) Init() tea.Cmd {
@@ -46,19 +45,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if m.input.Focused() {
 				m.table.SetRows(filterRows(m.originalRows, m.input.Value()))
 			} else {
-				cmdParts := strings.Fields(m.table.SelectedRow()[2])
-			
-				action := exec.Command(cmdParts[0], cmdParts[1:]...)
-
-				action.Stdin = os.Stdin
-				action.Stdout = os.Stdout
-				action.Stderr = os.Stderr
-
-				if err := action.Run(); err != nil {
-					tea.Println(err)
-					return m, tea.Quit
-				}
-
+				m.selectedCmd = m.table.SelectedRow()[2]
 				return m, tea.Quit
 			}
 		}
@@ -77,7 +64,7 @@ func (m model) View() string {
 	return baseStyle.Render(m.table.View()) + "\n" + m.input.View() + "\nctrl+c : quit | esc : switch view | enter (table) : run cmd | enter (input): run search\n"
 }
 
-func Start() error {
+func Start() (string, error) {
 	columns := []table.Column{
 		{Title: "Alias", Width: 10},
 		{Title: "Description", Width: 50},
@@ -88,12 +75,12 @@ func Start() error {
 
 	cmdsPath, err := configstore.GetCmdsPath()
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	cmds, err := cmdstore.Load(cmdsPath)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	for _, v := range cmds {
@@ -123,11 +110,14 @@ func Start() error {
 		Bold(false)
 	t.SetStyles(s)
 
-	m := model{table: t, input: textinput.New(), originalRows: rows}
-	if _, err := tea.NewProgram(m).Run(); err != nil {
-		return err
+	m := model{table: t, input: textinput.New(), originalRows: rows} 
+	
+	finalModel, err := tea.NewProgram(m).Run()
+	if err != nil {
+		return "", err
 	}
-	return nil
+
+	return finalModel.(model).selectedCmd, nil
 }
 
 func filterRows(rows []table.Row, s string) []table.Row {
