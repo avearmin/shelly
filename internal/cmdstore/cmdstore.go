@@ -1,8 +1,9 @@
 package cmdstore
 
 import (
-	"github.com/avearmin/shelly/internal/storage"
 	"os"
+
+	"github.com/avearmin/shelly/internal/storage"
 )
 
 type Command struct {

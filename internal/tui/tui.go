@@ -1,14 +1,15 @@
 package tui
 
 import (
+	"sort"
+	"strings"
+
 	"github.com/avearmin/shelly/internal/cmdstore"
 	"github.com/avearmin/shelly/internal/configstore"
 	"github.com/charmbracelet/bubbles/table"
 	"github.com/charmbracelet/bubbles/textinput"
-	"github.com/charmbracelet/bubbletea"
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"sort"
-	"strings"
 )
 
 var baseStyle = lipgloss.NewStyle().
@@ -19,7 +20,7 @@ type model struct {
 	table        table.Model
 	input        textinput.Model
 	originalRows []table.Row
-	selectedCmd string
+	selectedCmd  string
 }
 
 func (m model) Init() tea.Cmd {
@@ -49,7 +50,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, tea.Quit
 			}
 		}
-	}	
+	}
 
 	updateInput, inputCmd := m.input.Update(msg)
 	updateTable, tableCmd := m.table.Update(msg)
@@ -88,7 +89,7 @@ func Start() (string, error) {
 	}
 
 	sort.Slice(rows, func(i, j int) bool {
-		return rows[i][0] < rows[j][0] 
+		return rows[i][0] < rows[j][0]
 	})
 
 	t := table.New(
@@ -110,8 +111,8 @@ func Start() (string, error) {
 		Bold(false)
 	t.SetStyles(s)
 
-	m := model{table: t, input: textinput.New(), originalRows: rows} 
-	
+	m := model{table: t, input: textinput.New(), originalRows: rows}
+
 	finalModel, err := tea.NewProgram(m).Run()
 	if err != nil {
 		return "", err

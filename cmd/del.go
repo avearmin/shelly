@@ -2,10 +2,11 @@ package cmd
 
 import (
 	"fmt"
+	"os"
+
 	"github.com/avearmin/shelly/internal/cmdstore"
 	"github.com/avearmin/shelly/internal/configstore"
 	"github.com/spf13/cobra"
-	"os"
 )
 
 func init() {
