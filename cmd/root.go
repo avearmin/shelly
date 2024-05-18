@@ -12,17 +12,16 @@ import (
 )
 
 var rootCmd = &cobra.Command{
-Use:   "shelly",
+	Use:   "shelly",
 	Short: "shelly manages your shell commands",
 	Long: `shelly allows you to save aliases, delete them, and execute
-	their underlying shell commands all from a central location.`,
+		their underlying shell commands all from a central location.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		selectedCmd, err := tui.Start()
 		if err != nil {
 			fmt.Printf("Alas, there's been an error: %v", err)
 			os.Exit(1)
 		}
-		fmt.Println(selectedCmd)
 		if selectedCmd == "" {
 			return
 		}
