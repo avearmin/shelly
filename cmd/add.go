@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/avearmin/shelly/internal/cmdstore"
 	"github.com/avearmin/shelly/internal/configstore"
@@ -20,7 +21,7 @@ var addCmd = &cobra.Command{
 		delete this command using 'shelly del'.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) != 3 {
-			fmt.Fprintln(os.Stderr, "'add' requires: [ALIAS] [DESCRIPTION] [CMD]")
+			fmt.Fprintln(os.Stderr, "'add' requires args: [ALIAS] [DESCRIPTION] [CMD]")
 			os.Exit(1)
 		}
 
@@ -45,6 +46,7 @@ var addCmd = &cobra.Command{
 			Name:        args[0],
 			Description: args[1],
 			Action:      args[2],
+			LastUsed: time.Time{},
 		}
 
 		if err := cmdstore.Save(config.CmdsPath, cmds); err != nil {

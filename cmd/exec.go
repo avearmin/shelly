@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"time"
 
 	"github.com/avearmin/shelly/internal/cmdstore"
 	"github.com/avearmin/shelly/internal/configstore"
@@ -27,6 +28,7 @@ var execCmd = &cobra.Command{
 
 		if !configstore.Exists() {
 			fmt.Fprintln(os.Stderr, "shelly config doesn't exist. Please run 'shelly init'")
+			os.Exit(1)
 		}
 
 		config, err := configstore.Load()
@@ -40,8 +42,22 @@ var execCmd = &cobra.Command{
 			fmt.Fprintln(os.Stderr, err)
 			os.Exit(1)
 		}
+		
+		alias := args[0]
 
-		cmdParts := strings.Fields(cmds[args[0]].Action)
+		shellyCmd, ok := cmds[alias]
+		if !ok {
+			fmt.Println(alias + " is not a valid alias with shelly.")
+			os.Exit(1)
+		}
+		shellyCmd.LastUsed = time.Now()
+		cmds[alias] = shellyCmd
+		if err := cmdstore.Save(alias, cmds); err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+
+		cmdParts := strings.Fields(shellyCmd.Action)
 
 		action := exec.Command(cmdParts[0], cmdParts[1:]...)
 
