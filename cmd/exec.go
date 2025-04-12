@@ -52,7 +52,7 @@ var execCmd = &cobra.Command{
 		}
 		shellyCmd.LastUsed = time.Now()
 		cmds[alias] = shellyCmd
-		if err := cmdstore.Save(alias, cmds); err != nil {
+		if err := cmdstore.Save(config.CmdsPath, cmds); err != nil {
 			fmt.Println(err)
 			os.Exit(1)
 		}
