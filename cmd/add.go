@@ -19,16 +19,9 @@ var addCmd = &cobra.Command{
 	Short: "Add an alias and shell command.",
 	Long: `Add an alias and shell command to be managed by shelly. You can
 		delete this command using 'shelly del'.`,
+	Args: cobra.ExactArgs(3),
 	Run: func(cmd *cobra.Command, args []string) {
-		if len(args) != 3 {
-			fmt.Fprintln(os.Stderr, "'add' requires args: [ALIAS] [DESCRIPTION] [CMD]")
-			os.Exit(1)
-		}
-
-		if !configstore.Exists() {
-			fmt.Fprintln(os.Stderr, "shelly config doesn't exist. Please run 'shelly init'")
-			os.Exit(1)
-		}
+		configstore.MustHaveConfig()
 
 		config, err := configstore.Load()
 		if err != nil {

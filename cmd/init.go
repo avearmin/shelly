@@ -18,12 +18,8 @@ var initCmd = &cobra.Command{
 	Short: "Initalize shelly",
 	Long: `Initalize shelly by creating .shelly in your home dir, and
 		placing commands.json in it.`,
+	Args: cobra.ExactArgs(0),
 	Run: func(cmd *cobra.Command, args []string) {
-		if len(args) != 0 {
-			fmt.Fprintln(os.Stderr, "'init' requires no args")
-			os.Exit(1)
-		}
-
 		homeDir, err := os.UserHomeDir()
 		if err != nil {
 			fmt.Fprintln(os.Stderr, "HOME env variable not set")

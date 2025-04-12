@@ -20,16 +20,9 @@ var execCmd = &cobra.Command{
 	Use:   "exec",
 	Short: "Execute an shell command using shelly.",
 	Long:  "Execute a saved shell command using the assigned alias.",
+	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		if len(args) != 1 {
-			fmt.Fprintln(os.Stderr, "'exec' requires args: [ALIAS]")
-			os.Exit(1)
-		}
-
-		if !configstore.Exists() {
-			fmt.Fprintln(os.Stderr, "shelly config doesn't exist. Please run 'shelly init'")
-			os.Exit(1)
-		}
+		configstore.MustHaveConfig()
 
 		config, err := configstore.Load()
 		if err != nil {

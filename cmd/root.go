@@ -19,18 +19,11 @@ var rootCmd = &cobra.Command{
 	Short: "shelly manages your shell commands",
 	Long: `shelly allows you to save aliases, delete them, and execute
 		their underlying shell commands all from a central location.`,
+	Args: cobra.ExactArgs(0),
 	Run: func(cmd *cobra.Command, args []string) {
 		selectedCmd, err := tui.Start()
 		if err != nil {
 			fmt.Printf("Alas, there's been an error: %v", err)
-			os.Exit(1)
-		}
-		if len(selectedCmd) == 0 {
-			return
-		}
-
-		if !configstore.Exists() {
-			fmt.Fprintln(os.Stderr, "shelly config doesn't exist. Please run 'shelly init'")
 			os.Exit(1)
 		}
 
