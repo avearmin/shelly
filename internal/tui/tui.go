@@ -90,7 +90,7 @@ func Start() (string, error) {
 	}
 
 	sort.Slice(rows, func(i, j int) bool {
-		return rows[i][0] < rows[j][0]
+		return cmdstore.HumanTimeSortingRank(rows[i][3]) < cmdstore.HumanTimeSortingRank(rows[j][3])
 	})
 
 	t := table.New(

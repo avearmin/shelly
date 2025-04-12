@@ -44,6 +44,34 @@ func (c Command) LastUsedInHumanTerms() string {
 	}
 }
 
+func HumanTimeSortingRank(h string) int {
+	switch h {
+	case "Never":
+		return 99999
+	case "Today":
+		return 0
+	case "Yesterday":
+		return 1
+	}
+
+	var n int
+	var unit string
+	fmt.Sscanf(h, "%d %s", &n, &unit)
+
+	switch unit {
+	case "days", "day":
+		return n
+	case "weeks", "week":
+		return n * 7
+	case "months", "month":
+		return n * 30
+	case "years", "year":
+		return n * 365
+	default:
+		return 99998 // fallback for unknown strings
+	}
+}
+
 func plural(n int) string {
 	if n == 1 {
 		return ""
