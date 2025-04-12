@@ -46,7 +46,7 @@ var addCmd = &cobra.Command{
 			Name:        args[0],
 			Description: args[1],
 			Action:      args[2],
-			LastUsed: time.Time{},
+			LastUsed:    time.Time{},
 		}
 
 		if err := cmdstore.Save(config.CmdsPath, cmds); err != nil {

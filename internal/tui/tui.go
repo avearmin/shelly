@@ -20,7 +20,7 @@ type model struct {
 	table        table.Model
 	input        textinput.Model
 	originalRows []table.Row
-	selectedCmd  string
+	selectedCmd  []string
 }
 
 func (m model) Init() tea.Cmd {
@@ -46,7 +46,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if m.input.Focused() {
 				m.table.SetRows(filterRows(m.originalRows, m.input.Value()))
 			} else {
-				m.selectedCmd = m.table.SelectedRow()[2]
+				m.selectedCmd = m.table.SelectedRow()
 				return m, tea.Quit
 			}
 		}
@@ -65,7 +65,7 @@ func (m model) View() string {
 	return baseStyle.Render(m.table.View()) + "\n" + m.input.View() + "\nctrl+c : quit | esc : switch view | enter (table) : run cmd | enter (input): run search\n"
 }
 
-func Start() (string, error) {
+func Start() ([]string, error) {
 	columns := []table.Column{
 		{Title: "Alias", Width: 10},
 		{Title: "Description", Width: 50},
@@ -77,12 +77,12 @@ func Start() (string, error) {
 
 	cmdsPath, err := configstore.GetCmdsPath()
 	if err != nil {
-		return "", err
+		return []string{}, err
 	}
 
 	cmds, err := cmdstore.Load(cmdsPath)
 	if err != nil {
-		return "", err
+		return []string{}, err
 	}
 
 	for _, v := range cmds {
@@ -116,7 +116,7 @@ func Start() (string, error) {
 
 	finalModel, err := tea.NewProgram(m).Run()
 	if err != nil {
-		return "", err
+		return []string{}, err
 	}
 
 	return finalModel.(model).selectedCmd, nil

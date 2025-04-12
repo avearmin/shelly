@@ -42,7 +42,7 @@ var execCmd = &cobra.Command{
 			fmt.Fprintln(os.Stderr, err)
 			os.Exit(1)
 		}
-		
+
 		alias := args[0]
 
 		shellyCmd, ok := cmds[alias]

@@ -6,7 +6,10 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"time"
 
+	"github.com/avearmin/shelly/internal/cmdstore"
+	"github.com/avearmin/shelly/internal/configstore"
 	"github.com/avearmin/shelly/internal/tui"
 	"github.com/spf13/cobra"
 )
@@ -22,11 +25,42 @@ var rootCmd = &cobra.Command{
 			fmt.Printf("Alas, there's been an error: %v", err)
 			os.Exit(1)
 		}
-		if selectedCmd == "" {
+		if len(selectedCmd) == 0 {
 			return
 		}
 
-		cmdParts := strings.Fields(selectedCmd)
+		if !configstore.Exists() {
+			fmt.Fprintln(os.Stderr, "shelly config doesn't exist. Please run 'shelly init'")
+			os.Exit(1)
+		}
+
+		config, err := configstore.Load()
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
+
+		cmds, err := cmdstore.Load(config.CmdsPath)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
+
+		alias := selectedCmd[0]
+
+		shellyCmd, ok := cmds[alias]
+		if !ok {
+			fmt.Println(alias + " is not a valid alias with shelly.")
+			os.Exit(1)
+		}
+		shellyCmd.LastUsed = time.Now()
+		cmds[alias] = shellyCmd
+		if err := cmdstore.Save(config.CmdsPath, cmds); err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+
+		cmdParts := strings.Fields(selectedCmd[2])
 
 		action := exec.Command(cmdParts[0], cmdParts[1:]...)
 
