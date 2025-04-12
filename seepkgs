@@ -1,1 +1,0 @@
-{"seepkgs":{"name":"seepkgs","description":"see all pkgs managed by brew","last_used":"2025-04-12T11:36:25.047025-04:00","action":"brew deps --tree --installed"},"shellycmds":{"name":"shellycmds","description":"open nvim to shelly cmds json","last_used":"0001-01-01T00:00:00Z","action":"nvim ~/.config/shelly/"}}
