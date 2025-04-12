@@ -70,6 +70,7 @@ func Start() (string, error) {
 		{Title: "Alias", Width: 10},
 		{Title: "Description", Width: 50},
 		{Title: "Command", Width: 30},
+		{Title: "Last Used", Width: 10},
 	}
 
 	rows := []table.Row{}
@@ -85,7 +86,7 @@ func Start() (string, error) {
 	}
 
 	for _, v := range cmds {
-		rows = append(rows, table.Row{v.Name, v.Description, v.Action})
+		rows = append(rows, table.Row{v.Name, v.Description, v.Action, v.LastUsedInHumanTerms()})
 	}
 
 	sort.Slice(rows, func(i, j int) bool {
