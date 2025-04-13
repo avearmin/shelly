@@ -20,7 +20,7 @@ var execCmd = &cobra.Command{
 	Use:   "exec",
 	Short: "Execute an shell command using shelly.",
 	Long:  "Execute a saved shell command using the assigned alias.",
-	Args: cobra.ExactArgs(1),
+	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		configstore.MustHaveConfig()
 

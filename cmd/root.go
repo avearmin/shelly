@@ -21,12 +21,6 @@ var rootCmd = &cobra.Command{
 		their underlying shell commands all from a central location.`,
 	Args: cobra.ExactArgs(0),
 	Run: func(cmd *cobra.Command, args []string) {
-		selectedCmd, err := tui.Start()
-		if err != nil {
-			fmt.Printf("Alas, there's been an error: %v", err)
-			os.Exit(1)
-		}
-
 		config, err := configstore.Load()
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err)
@@ -39,21 +33,27 @@ var rootCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		alias := selectedCmd[0]
+		cmdSlice := make([]cmdstore.Command, len(cmds))
+		i := 0
+		for _, v := range cmds {
+			cmdSlice[i] = v
+			i++
+		}
 
-		shellyCmd, ok := cmds[alias]
-		if !ok {
-			fmt.Println(alias + " is not a valid alias with shelly.")
+		selectedCmd, err := tui.Start(cmdSlice)
+		if err != nil{
+			fmt.Println(err)
 			os.Exit(1)
 		}
-		shellyCmd.LastUsed = time.Now()
-		cmds[alias] = shellyCmd
+
+		selectedCmd.LastUsed = time.Now()
+		cmds[selectedCmd.Name] = selectedCmd
 		if err := cmdstore.Save(config.CmdsPath, cmds); err != nil {
 			fmt.Println(err)
 			os.Exit(1)
 		}
 
-		cmdParts := strings.Fields(selectedCmd[2])
+		cmdParts := strings.Fields(selectedCmd.Action)
 
 		action := exec.Command(cmdParts[0], cmdParts[1:]...)
 

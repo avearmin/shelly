@@ -2,6 +2,7 @@ package configstore
 
 import (
 	"errors"
+	"fmt"
 	"os"
 
 	"github.com/avearmin/shelly/internal/storage"
@@ -9,6 +10,13 @@ import (
 
 type Config struct {
 	CmdsPath string `json:"cmdspath"`
+}
+
+func MustHaveConfig() {
+	if !Exists() {
+		fmt.Fprintln(os.Stderr, "shelly config doesn't exist. Please run 'shelly init'")
+		os.Exit(1)
+	}
 }
 
 func Load() (Config, error) {

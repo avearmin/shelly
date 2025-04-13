@@ -13,6 +13,7 @@ type Command struct {
 	Description string    `json:"description"`
 	LastUsed    time.Time `json:"last_used"`
 	Action      string    `json:"action"`
+	Scope       string    `json:"scope"`
 }
 
 func (c Command) LastUsedInHumanTerms() string {

@@ -17,9 +17,9 @@ var delCmd = &cobra.Command{
 	Use:   "del",
 	Short: "Delete an alias and shell command.",
 	Long:  "Delete an alias and shell command that is managed by shelly.",
-	Args: cobra.ExactArgs(1),
+	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		configstore.MustHaveConfig()	
+		configstore.MustHaveConfig()
 
 		config, err := configstore.Load()
 		if err != nil {
