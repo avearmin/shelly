@@ -45,6 +45,9 @@ var rootCmd = &cobra.Command{
 			fmt.Println(err)
 			os.Exit(1)
 		}
+		if selectedCmd.IsEmpty() { // if empty then the user wants to quit without running a command
+			os.Exit(0)
+		}
 
 		selectedCmd.LastUsed = time.Now()
 		cmds[selectedCmd.Name] = selectedCmd

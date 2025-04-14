@@ -16,6 +16,10 @@ type Command struct {
 	Scope       string    `json:"scope"`
 }
 
+func (c Command) IsEmpty() bool {
+	return c.Name == "" && c.Description == "" && c.LastUsed.IsZero() && c.Action == "" && c.Scope == ""
+}
+
 func (c Command) LastUsedInHumanTerms() string {
 	if c.LastUsed.IsZero() {
 		return "Never"

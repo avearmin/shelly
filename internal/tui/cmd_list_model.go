@@ -1,6 +1,7 @@
 package tui
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/avearmin/shelly/internal/cmdstore"
@@ -10,37 +11,37 @@ import (
 
 var (
 	selectedBar = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("212")).
-			SetString("┃")
+		Foreground(lipgloss.Color("212")).
+		SetString("┃")
 
 	unselectedBar = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("240")).
-			SetString("│")
+		Foreground(lipgloss.Color("240")).
+		SetString("│")
 
 	aliasStyle = lipgloss.NewStyle().
-			Bold(true).
-			Foreground(lipgloss.Color("229")) // e.g., bright yellow
+		Bold(true).
+		Foreground(lipgloss.Color("229")) // e.g., bright yellow
 
 	descriptionStyle = lipgloss.NewStyle().
-				Foreground(lipgloss.Color("245")) // dim gray
+		Foreground(lipgloss.Color("245")) // dim gray
 
 	commandStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("39")) // cyan
+		Foreground(lipgloss.Color("39")) // cyan
 
 	lastUsedNeverStyle = lipgloss.NewStyle().
-				Foreground(lipgloss.Color("240")) // gray
+		Foreground(lipgloss.Color("240")) // gray
 
 	lastUsedDaysAgoStyle = lipgloss.NewStyle().
-				Foreground(lipgloss.Color("34")) // bright green
+		Foreground(lipgloss.Color("34")) // bright green
 
 	lastUsedWeeksAgoStyle = lipgloss.NewStyle().
-				Foreground(lipgloss.Color("70")) // duller green
+		Foreground(lipgloss.Color("70")) // duller green
 
 	lastUsedMonthsAgoStyle = lipgloss.NewStyle().
-				Foreground(lipgloss.Color("228")) // yellow
+		Foreground(lipgloss.Color("228")) // yellow
 
 	lastUsedYearsAgoStyle = lipgloss.NewStyle().
-				Foreground(lipgloss.Color("196")) // red
+		Foreground(lipgloss.Color("196")) // red
 
 )
 
@@ -48,8 +49,10 @@ type listModel struct {
 	items          []cmdstore.Command
 	filteredItems  []cmdstore.Command
 	index          int
-	selected       int
+	cursor         int
+	selected       cmdstore.Command
 	viewPortLength int
+	viewPortStart  int
 }
 
 func (m listModel) Init() tea.Cmd {
@@ -60,16 +63,44 @@ func (m listModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		if msg.String() == "up" || msg.String() == "k" {
+			if m.viewPortStart == m.cursor {
+				if m.index == 0 {
+					m.cursor = m.viewPortLength - 1
+					m.viewPortStart = len(m.filteredItems) - m.viewPortLength
+				} else {
+					m.viewPortStart--
+				}
+			} else {
+				m.cursor--
+			}
+
 			m.index = mod(m.index-1, len(m.filteredItems))
+
 			return m, nil
 		}
 		if msg.String() == "down" || msg.String() == "j" {
+			if m.viewPortLength - 1 == m.cursor {
+				if m.index == len(m.filteredItems) - 1 {
+					m.cursor = 0
+					m.viewPortStart = 0
+				} else {
+					m.viewPortStart++
+				}
+			} else {
+				m.cursor++
+			}
+
 			m.index = mod(m.index+1, len(m.filteredItems))
 			return m, nil
 		}
+		// here we return an empty model to clear the tui
+		// to reduce screen clutter when the user exits
 		if msg.String() == "enter" {
-			m.selected = m.index
-			return m, tea.Quit
+			m.selected = m.filteredItems[m.index]
+			return listModel{selected: m.selected}, tea.Quit
+		}
+		if msg.String() == "ctrl+c" {
+			return listModel{}, tea.Quit
 		}
 	}
 
@@ -79,9 +110,9 @@ func (m listModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m listModel) View() string {
 	b := strings.Builder{}
 
-	for i, v := range m.filteredItems {
+	for i, v := range m.viewportItems(){
 		var bar lipgloss.Style
-		if m.index == i {
+		if m.cursor == i {
 			bar = selectedBar
 		} else {
 			bar = unselectedBar
@@ -93,8 +124,14 @@ func (m listModel) View() string {
 		b.WriteString(bar.Render(" ") + lastUsedStyleFor(v.LastUsedInHumanTerms()) + "\n")
 		b.WriteString("\n")
 	}
+	b.WriteString(fmt.Sprintf("%d/%d", m.index + 1, len(m.filteredItems)))
 
 	return b.String()
+}
+
+func (m listModel) viewportItems() []cmdstore.Command {
+	viewportEnd := min(len(m.filteredItems), m.viewPortStart+m.viewPortLength)
+	return m.filteredItems[m.viewPortStart:viewportEnd] 
 }
 
 func Start(cmds []cmdstore.Command) (cmdstore.Command, error) {
@@ -102,8 +139,9 @@ func Start(cmds []cmdstore.Command) (cmdstore.Command, error) {
 		items:          cmds,
 		filteredItems:  cmds,
 		index:          0,
-		selected:       0,
-		viewPortLength: 10,
+		cursor:         0,
+		selected:       cmdstore.Command{},
+		viewPortLength: 5,
 	}
 
 	finalModel, err := tea.NewProgram(model).Run()
@@ -111,12 +149,20 @@ func Start(cmds []cmdstore.Command) (cmdstore.Command, error) {
 		return cmdstore.Command{}, err
 	}
 
-	return finalModel.(listModel).filteredItems[finalModel.(listModel).selected], nil
+	return finalModel.(listModel).selected, nil
 }
 
 // % is not a true mod, and wont work as expected with negative numbers
 func mod(a, b int) int {
 	return (a%b + b) % b
+}
+
+func min(a, b int) int {
+	if a < b {
+		return a
+	} else {
+		return b
+	}
 }
 
 func lastUsedStyleFor(s string) string {
