@@ -61,6 +61,12 @@ func (m listModel) Init() tea.Cmd {
 
 func (m listModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
+	case searchForInputMsg:
+		m.filteredItems = filter(string(msg), m.items)
+		m.cursor = 0
+		m.index = 0
+		m.viewPortStart = 0
+		m.viewPortLength = min(5, len(m.filteredItems)) // 5 here is hard coded, and later we make configurable
 	case tea.KeyMsg:
 		if msg.String() == "up" || msg.String() == "k" {
 			if m.viewPortStart == m.cursor {
@@ -93,8 +99,6 @@ func (m listModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.index = mod(m.index+1, len(m.filteredItems))
 			return m, nil
 		}
-		// here we return an empty model to clear the tui
-		// to reduce screen clutter when the user exits
 		if msg.String() == "enter" {
 			m.selected = m.filteredItems[m.index]
 			return listModel{selected: m.selected}, tea.Quit
@@ -144,6 +148,14 @@ func min(a, b int) int {
 	}
 }
 
+func max(a, b int) int {
+	if a > b {
+		return a
+	} else {
+		return b
+	}
+}
+
 func lastUsedStyleFor(s string) string {
 	switch {
 	case s == "Never":
@@ -159,4 +171,16 @@ func lastUsedStyleFor(s string) string {
 	default:
 		return lipgloss.NewStyle().Foreground(lipgloss.Color("244")).Render(s) // fallback gray
 	}
+}
+
+func filter(s string, items []cmdstore.Command) []cmdstore.Command {
+	filteredItems := []cmdstore.Command{}
+
+	for _, v := range items {
+		if strings.Contains(v.Name, s) || strings.Contains(v.Description, s) {
+			filteredItems = append(filteredItems, v)
+		}
+	}
+
+	return filteredItems
 }
