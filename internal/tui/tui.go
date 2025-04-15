@@ -3,11 +3,18 @@ package tui
 import (
 	"github.com/avearmin/shelly/internal/cmdstore"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 )
 
 const (
 	focusSearch = iota
 	focusCommandList
+)
+
+var (
+	boxStyle         = lipgloss.NewStyle().Border(lipgloss.NormalBorder()).Padding(0, 1)
+	focusedBoxStyle  = boxStyle.BorderForeground(lipgloss.Color("205")) // magenta
+	unfocusedBoxStyle = boxStyle.BorderForeground(lipgloss.Color("240")) // gray
 )
 
 type focusOtherMsg string
@@ -16,6 +23,7 @@ type model struct {
 	search      searchModel
 	commandList listModel
 	focus       int
+	width       int
 }
 
 func (m model) Init() tea.Cmd {
@@ -57,10 +65,31 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m model) View() string {
-	return m.search.View() + "\n\n" + m.commandList.View()
+	searchStyle := unfocusedBoxStyle
+	listStyle := unfocusedBoxStyle
+
+	if m.focus == focusSearch {
+		searchStyle = focusedBoxStyle
+	} else {
+		listStyle = focusedBoxStyle
+	}
+
+	searchBox := searchStyle.
+		Width(m.width).
+		Render(m.search.View())
+
+	commandBox := listStyle.
+		Width(m.width).
+		Render(m.commandList.View())
+
+	return lipgloss.JoinVertical(lipgloss.Left, searchBox, commandBox)
 }
 
 func Start(cmds []cmdstore.Command) (cmdstore.Command, error) {
+	// in the future we'll add these values to the config
+	appWidth := 80
+	appViewPortLength := 5
+
 	m := model{
 		search: searchModel{
 			input:  "",
@@ -72,9 +101,10 @@ func Start(cmds []cmdstore.Command) (cmdstore.Command, error) {
 			index:          0,
 			cursor:         0,
 			selected:       cmdstore.Command{},
-			viewPortLength: 5,
+			viewPortLength: appViewPortLength,
 		},
 		focus: focusCommandList,
+		width: appWidth,
 	}
 
 	finalModel, err := tea.NewProgram(m).Run()
