@@ -9,21 +9,23 @@ import (
 const (
 	focusSearch = iota
 	focusCommandList
+	focusForm
 )
 
 var (
-	boxStyle         = lipgloss.NewStyle().Border(lipgloss.NormalBorder()).Padding(0, 1)
-	focusedBoxStyle  = boxStyle.BorderForeground(lipgloss.Color("205")) // magenta
+	boxStyle          = lipgloss.NewStyle().Border(lipgloss.NormalBorder()).Padding(0, 1)
+	focusedBoxStyle   = boxStyle.BorderForeground(lipgloss.Color("205")) // magenta
 	unfocusedBoxStyle = boxStyle.BorderForeground(lipgloss.Color("240")) // gray
 )
 
 type focusOtherMsg string
 
 type model struct {
-	search      searchModel
-	commandList listModel
-	focus       int
-	width       int
+	search     searchModel
+	actionList listModel
+	form       formModel
+	focus      int
+	width      int
 }
 
 func (m model) Init() tea.Cmd {
@@ -35,9 +37,14 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var result tea.Model
 
 	switch msg := msg.(type) {
-	case searchForInputMsg:
-		result, cmd = m.commandList.Update(msg)
-		m.commandList = result.(listModel)
+	case searchForInputMsg, updateActionListMsg:
+		result, cmd = m.actionList.Update(msg)
+		m.actionList = result.(listModel)
+	case resendSearchMsg:
+		result, cmd = m.search.Update(msg)
+		m.search = result.(searchModel)
+	case submitMsg:
+		cmd = saveCmd(msg)
 	case tea.KeyMsg:
 		if msg.String() == "ctrl+c" {
 			return model{}, tea.Quit
@@ -57,8 +64,15 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			result, cmd = m.search.Update(msg)
 			m.search = result.(searchModel)
 		case focusCommandList:
-			result, cmd = m.commandList.Update(msg)
-			m.commandList = result.(listModel)
+			if msg.String() == "a" {
+				m.focus = focusForm
+			} else {
+				result, cmd = m.actionList.Update(msg)
+				m.actionList = result.(listModel)
+			}
+		case focusForm:
+			result, cmd = m.form.Update(msg)
+			m.form = result.(formModel)
 		}
 	}
 	return m, cmd
@@ -80,9 +94,17 @@ func (m model) View() string {
 
 	commandBox := listStyle.
 		Width(m.width).
-		Render(m.commandList.View())
+		Render(m.actionList.View())
 
-	return lipgloss.JoinVertical(lipgloss.Left, searchBox, commandBox)
+	var currentView string
+	if m.focus == focusForm {
+		currentView = m.form.View()
+	} else {
+		currentView = lipgloss.JoinVertical(lipgloss.Left, searchBox, commandBox)
+
+	}
+
+	return currentView
 }
 
 func Start(cmds []cmdstore.Command) (cmdstore.Command, error) {
@@ -92,16 +114,22 @@ func Start(cmds []cmdstore.Command) (cmdstore.Command, error) {
 
 	m := model{
 		search: searchModel{
-			input:  "",
-			cursor: 0,
+			input:     input{"", 0},
+			isFocused: false,
 		},
-		commandList: listModel{
+		actionList: listModel{
 			items:          cmds,
 			filteredItems:  cmds,
 			index:          0,
 			cursor:         0,
 			selected:       cmdstore.Command{},
 			viewPortLength: appViewPortLength,
+		},
+		form: formModel{
+			alias: input{"", 0},
+			description: input{"", 0},
+			action: input{"", 0},
+			focus: focusFormAlias,
 		},
 		focus: focusCommandList,
 		width: appWidth,
@@ -112,5 +140,5 @@ func Start(cmds []cmdstore.Command) (cmdstore.Command, error) {
 		return cmdstore.Command{}, err
 	}
 
-	return finalModel.(model).commandList.selected, nil
+	return finalModel.(model).actionList.selected, nil
 }

@@ -11,10 +11,16 @@ var cursorStyle = lipgloss.NewStyle().
 	Background(lipgloss.Color("212"))
 
 type searchForInputMsg string
+type resendSearchMsg struct{}
+
+func searchCmd(searchFor string) tea.Cmd {
+	return func() tea.Msg {
+		return searchForInputMsg(searchFor)
+	}
+}
 
 type searchModel struct {
-	input     string
-	cursor    int
+	input     input
 	isFocused bool
 }
 
@@ -24,51 +30,28 @@ func (m searchModel) Init() tea.Cmd {
 
 func (m searchModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
+	case resendSearchMsg:
+		break // do nothing special
 	case tea.KeyMsg:
-		switch msg.Type {
-		case tea.KeyRight:
-			if m.cursor != len(m.input) {
-				m.cursor++
-			}
-		case tea.KeyLeft:
-			if m.cursor != 0 {
-				m.cursor--
-			}
-		case tea.KeyBackspace:
-			if m.cursor != 0 {
-				m.input = m.input[:m.cursor-1] + m.input[m.cursor:]
-				m.cursor--
-			}
-		case tea.KeySpace:
-			m.input = m.input[:m.cursor] + " " + m.input[m.cursor:]
-			m.cursor++
-		case tea.KeyRunes:
-			for _, rune := range msg.Runes {
-				m.input = m.input[:m.cursor] + string(rune) + m.input[m.cursor:]
-				m.cursor++
-			}
-		}
+		m.input.handleKeys(msg)
 	}
 
-	cmd := func() tea.Msg {
-		return searchForInputMsg(m.input)
-	}
-	return m, cmd
+	return m, searchCmd(m.input.input)
 }
 
 func (m searchModel) View() string {
 	b := strings.Builder{}
 	b.WriteString("Search: ")
 
-	if len(m.input) == 0 {
+	if len(m.input.input) == 0 {
 		if m.isFocused {
 			b.WriteString(cursorStyle.Render(" "))
 		}
 		return b.String()
 	}
 
-	before := m.input[:m.cursor]
-	after := m.input[m.cursor:]
+	before := m.input.input[:m.input.cursor]
+	after := m.input.input[m.input.cursor:]
 
 	var cursorChar string
 	if len(after) != 0 {

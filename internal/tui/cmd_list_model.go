@@ -45,6 +45,8 @@ var (
 
 )
 
+type updateActionListMsg struct{ payload cmdstore.Command }
+
 type listModel struct {
 	items          []cmdstore.Command
 	filteredItems  []cmdstore.Command
@@ -61,6 +63,11 @@ func (m listModel) Init() tea.Cmd {
 
 func (m listModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
+	case updateActionListMsg:
+		m.items = append(m.items, msg.payload)
+		return m, func() tea.Msg {
+			return resendSearchMsg{}
+		}
 	case searchForInputMsg:
 		m.filteredItems = filter(string(msg), m.items)
 		m.cursor = 0
