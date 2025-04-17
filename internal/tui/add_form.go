@@ -19,6 +19,8 @@ type submitMsg struct {
 	action      string
 }
 
+type exitFormMsg struct{}
+
 func saveCmd(msg submitMsg) tea.Cmd {
 	return func() tea.Msg {
 		config, err := configstore.Load()
@@ -42,6 +44,22 @@ func saveCmd(msg submitMsg) tea.Cmd {
 
 }
 
+func submitCmd(alias, description, action string) tea.Cmd {
+	return func() tea.Msg {
+		return submitMsg{
+			alias:       alias,
+			description: description,
+			action:      action,
+		}
+	}
+}
+
+func exitFormCmd() tea.Cmd {
+	return func() tea.Msg {	
+		return exitFormMsg{}	
+	}
+}
+
 type formModel struct {
 	alias       input
 	description input
@@ -57,6 +75,13 @@ func (m formModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
+		if msg.String() == "esc" {
+			m.alias = input{"", 0}
+			m.description = input{"", 0}
+			m.action = input{"", 0}
+			m.focus = focusFormAlias
+			cmd = exitFormCmd()
+		}
 		switch m.focus {
 		case focusFormAlias:
 			switch msg.String() {
@@ -71,7 +96,7 @@ func (m formModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			switch msg.String() {
 			case "up":
 				m.focus = focusFormAlias
-			case"down":
+			case "down":
 				m.focus = focusFormAction
 			default:
 				m.description.handleKeys(msg)
@@ -87,18 +112,24 @@ func (m formModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		case focusSubmitButton:
 			switch msg.String() {
-				case "up":
-					m.focus = focusFormAction
-				case "down":
-					m.focus = focusFormAlias
-				case "enter":
-					cmd = func() tea.Msg {
-						return submitMsg{
-							alias:       m.alias.input,
-							description: m.description.input,
-							action:      m.action.input,
-						}
-					}
+			case "up":
+				m.focus = focusFormAction
+			case "down":
+				m.focus = focusFormAlias
+			case "enter":
+				alias := m.alias.input
+				description := m.description.input
+				action := m.action.input
+
+				m.alias = input{"", 0}
+				m.description = input{"", 0}
+				m.action = input{"", 0}
+				m.focus = focusFormAlias
+
+				cmd = tea.Batch(
+					submitCmd(alias, description, action),
+					exitFormCmd(),
+				)
 			}
 		}
 	}
@@ -125,6 +156,6 @@ func (m formModel) View() string {
 
 	return aliasStyle.Render("Alias: ", m.alias.input) + "\n" +
 		descriptionStyle.Render("Description: ", m.description.input) + "\n" +
-		actionStyle.Render("Action: " + m.action.input) + "\n" +
+		actionStyle.Render("Action: "+m.action.input) + "\n" +
 		buttonStyle.Render("submit") + "\n"
 }

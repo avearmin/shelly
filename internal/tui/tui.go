@@ -45,6 +45,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.search = result.(searchModel)
 	case submitMsg:
 		cmd = saveCmd(msg)
+	case exitFormMsg:
+		m.focus = focusCommandList
 	case tea.KeyMsg:
 		if msg.String() == "ctrl+c" {
 			return model{}, tea.Quit
@@ -126,10 +128,10 @@ func Start(cmds []cmdstore.Command) (cmdstore.Command, error) {
 			viewPortLength: appViewPortLength,
 		},
 		form: formModel{
-			alias: input{"", 0},
+			alias:       input{"", 0},
 			description: input{"", 0},
-			action: input{"", 0},
-			focus: focusFormAlias,
+			action:      input{"", 0},
+			focus:       focusFormAlias,
 		},
 		focus: focusCommandList,
 		width: appWidth,
