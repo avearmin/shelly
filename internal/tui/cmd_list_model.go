@@ -76,7 +76,7 @@ func (m listModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.viewPortLength = min(5, len(m.filteredItems)) // 5 here is hard coded, and later we make configurable
 	case tea.KeyMsg:
 		if msg.String() == "up" || msg.String() == "k" {
-			if m.viewPortStart == m.cursor {
+			if m.viewPortStart == m.cursor+m.viewPortStart {
 				if m.index == 0 {
 					m.cursor = m.viewPortLength - 1
 					m.viewPortStart = len(m.filteredItems) - m.viewPortLength
@@ -117,7 +117,6 @@ func (m listModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m listModel) View() string {
 	b := strings.Builder{}
-
 	for i, v := range m.viewportItems() {
 		var bar lipgloss.Style
 		if m.cursor == i {
@@ -133,7 +132,6 @@ func (m listModel) View() string {
 		b.WriteString("\n")
 	}
 	b.WriteString(fmt.Sprintf("%d/%d", m.index+1, len(m.filteredItems)))
-
 	return b.String()
 }
 

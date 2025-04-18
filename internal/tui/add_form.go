@@ -55,8 +55,8 @@ func submitCmd(alias, description, action string) tea.Cmd {
 }
 
 func exitFormCmd() tea.Cmd {
-	return func() tea.Msg {	
-		return exitFormMsg{}	
+	return func() tea.Msg {
+		return exitFormMsg{}
 	}
 }
 
