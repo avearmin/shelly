@@ -2,6 +2,7 @@ package tui
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 
 	"github.com/avearmin/shelly/internal/cmdstore"
@@ -46,15 +47,18 @@ var (
 )
 
 type updateActionListMsg struct{ payload cmdstore.Command }
+type delFromStoreMsg struct{ alias string }
+type growViewPortMsg struct{}
 
 type listModel struct {
-	items          []cmdstore.Command
-	filteredItems  []cmdstore.Command
-	index          int
-	cursor         int
-	selected       cmdstore.Command
-	viewPortLength int
-	viewPortStart  int
+	items             []cmdstore.Command
+	filteredItems     []cmdstore.Command
+	filterIndex       int
+	cursor            int
+	selected          cmdstore.Command
+	viewPortLengthMax int
+	viewPortLengthCur int
+	viewPortStart     int
 }
 
 func (m listModel) Init() tea.Cmd {
@@ -63,6 +67,10 @@ func (m listModel) Init() tea.Cmd {
 
 func (m listModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
+	case growViewPortMsg:
+		if !(m.viewPortLengthCur >= m.viewPortLengthMax) {
+			m.viewPortLengthCur++
+		}
 	case updateActionListMsg:
 		m.items = append(m.items, msg.payload)
 		return m, func() tea.Msg {
@@ -71,15 +79,15 @@ func (m listModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case searchForInputMsg:
 		m.filteredItems = filter(string(msg), m.items)
 		m.cursor = 0
-		m.index = 0
+		m.filterIndex = 0
 		m.viewPortStart = 0
-		m.viewPortLength = min(5, len(m.filteredItems)) // 5 here is hard coded, and later we make configurable
+		m.viewPortLengthCur = min(m.viewPortLengthMax, len(m.filteredItems))
 	case tea.KeyMsg:
 		if msg.String() == "up" || msg.String() == "k" {
 			if m.viewPortStart == m.cursor+m.viewPortStart {
-				if m.index == 0 {
-					m.cursor = m.viewPortLength - 1
-					m.viewPortStart = len(m.filteredItems) - m.viewPortLength
+				if m.filterIndex == 0 {
+					m.cursor = m.viewPortLengthCur - 1
+					m.viewPortStart = len(m.filteredItems) - m.viewPortLengthCur
 				} else {
 					m.viewPortStart--
 				}
@@ -87,13 +95,13 @@ func (m listModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.cursor--
 			}
 
-			m.index = mod(m.index-1, len(m.filteredItems))
+			m.filterIndex = mod(m.filterIndex-1, len(m.filteredItems))
 
 			return m, nil
 		}
 		if msg.String() == "down" || msg.String() == "j" {
-			if m.viewPortLength-1 == m.cursor {
-				if m.index == len(m.filteredItems)-1 {
+			if m.viewPortLengthCur-1 == m.cursor {
+				if m.filterIndex == len(m.filteredItems)-1 {
 					m.cursor = 0
 					m.viewPortStart = 0
 				} else {
@@ -103,11 +111,36 @@ func (m listModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.cursor++
 			}
 
-			m.index = mod(m.index+1, len(m.filteredItems))
+			m.filterIndex = mod(m.filterIndex+1, len(m.filteredItems))
 			return m, nil
 		}
+		if msg.String() == "d" {
+			if len(m.filteredItems) == 0 || len(m.items) == 0 {
+				return m, nil
+			}
+
+			alias := m.filteredItems[m.filterIndex].Name
+
+			m.filteredItems = append(m.filteredItems[:m.filterIndex], m.filteredItems[m.filterIndex+1:]...)
+			m.items = slices.DeleteFunc(m.items, func(action cmdstore.Command) bool {
+				return action.Name == alias
+			})
+
+			prevViewPortLength := m.viewPortLengthCur
+			m.viewPortLengthCur = min(m.viewPortLengthMax, len(m.filteredItems))
+			if m.viewPortLengthCur != prevViewPortLength {
+				m.cursor = max(m.cursor-1, 0)
+			}
+			m.filterIndex = max(m.filterIndex-1, 0)
+			m.viewPortStart = max(m.viewPortStart-1, 0)
+
+			return m, func() tea.Msg {
+				return delFromStoreMsg{alias}
+			}
+
+		}
 		if msg.String() == "enter" {
-			m.selected = m.filteredItems[m.index]
+			m.selected = m.filteredItems[m.filterIndex]
 			return listModel{selected: m.selected}, tea.Quit
 		}
 	}
@@ -131,17 +164,20 @@ func (m listModel) View() string {
 		b.WriteString(bar.Render(" ") + lastUsedStyleFor(v.LastUsedInHumanTerms()) + "\n")
 		b.WriteString("\n")
 	}
-	b.WriteString(fmt.Sprintf("%d/%d", m.index+1, len(m.filteredItems)))
+	b.WriteString(fmt.Sprintf("%d/%d", m.filterIndex+1, len(m.filteredItems)))
 	return b.String()
 }
 
 func (m listModel) viewportItems() []cmdstore.Command {
-	viewportEnd := min(len(m.filteredItems), m.viewPortStart+m.viewPortLength)
-	return m.filteredItems[m.viewPortStart:viewportEnd]
+	viewportEnd := min(len(m.filteredItems), m.viewPortStart+m.viewPortLengthCur)
+	return m.filteredItems[m.viewPortStart:max(viewportEnd, 0)]
 }
 
 // % is not a true mod, and wont work as expected with negative numbers
 func mod(a, b int) int {
+	if b == 0 {
+		return 0
+	}
 	return (a%b + b) % b
 }
 
