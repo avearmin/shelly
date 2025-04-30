@@ -2,6 +2,7 @@ package tui
 
 import (
 	"github.com/avearmin/shelly/internal/cmdstore"
+	"github.com/avearmin/shelly/internal/configstore"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 )
@@ -20,6 +21,31 @@ var (
 
 type focusOtherMsg string
 
+// This func should only be called from inside the TUI.
+// The TUI should not be accessible if the config/cmdstore
+// does not exist. If we get here without them a panic is needed.
+func deleteFromStoreCmd(alias string) tea.Cmd {
+	return func() tea.Msg {
+		config, err := configstore.Load()
+		if err != nil {
+			panic(err)
+		}
+
+		actions, err := cmdstore.Load(config.CmdsPath)
+		if err != nil {
+			panic(err)
+		}
+
+		delete(actions, alias)
+
+		if err := cmdstore.Save(config.CmdsPath, actions); err != nil {
+			panic(err)
+		}
+
+		return nil
+	}
+}
+
 type model struct {
 	search     searchModel
 	actionList listModel
@@ -37,6 +63,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var result tea.Model
 
 	switch msg := msg.(type) {
+	case delFromStoreMsg:
+		cmd = deleteFromStoreCmd(msg.alias)
 	case searchForInputMsg, updateActionListMsg:
 		result, cmd = m.actionList.Update(msg)
 		m.actionList = result.(listModel)
