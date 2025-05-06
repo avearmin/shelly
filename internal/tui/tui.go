@@ -149,7 +149,7 @@ func Start(cmds []cmdstore.Command) (cmdstore.Command, error) {
 		},
 		actionList: listModel{
 			items:             cmds,
-			filteredItems:     cmds,
+			filteredItems:     filter("", cmds),
 			filterIndex:       0,
 			cursor:            0,
 			selected:          cmdstore.Command{},

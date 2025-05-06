@@ -223,5 +223,16 @@ func filter(s string, items []cmdstore.Command) []cmdstore.Command {
 		}
 	}
 
+	
+	slices.SortFunc(filteredItems, func(x, y cmdstore.Command) int {
+		switch {
+		case x.LastUsed.After(y.LastUsed):
+			return -1
+		case x.LastUsed.Before(y.LastUsed):
+			return 1
+		}
+		return 0
+	})
+
 	return filteredItems
 }
