@@ -54,6 +54,12 @@ func submitCmd(alias, description, action string) tea.Cmd {
 	}
 }
 
+func delFromItemsCmd(alias string) tea.Cmd {
+	return func() tea.Msg {
+		return delFromItems{alias}
+	}
+}
+
 func exitFormCmd() tea.Cmd {
 	return func() tea.Msg {
 		return exitFormMsg{}
@@ -61,6 +67,7 @@ func exitFormCmd() tea.Cmd {
 }
 
 type formModel struct {
+	previous    string // if we are editing a command, we need a record of the previous alias
 	alias       input
 	description input
 	action      input
@@ -126,10 +133,22 @@ func (m formModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.action = input{"", 0}
 				m.focus = focusFormAlias
 
-				cmd = tea.Batch(
-					submitCmd(alias, description, action),
-					exitFormCmd(),
-				)
+				if m.previous != "" {
+					cmd = tea.Batch(
+						deleteFromStoreCmd(m.previous),
+						delFromItemsCmd(m.previous),
+						submitCmd(alias, description, action),
+						exitFormCmd(),
+					)
+				} else {
+					cmd = tea.Batch(
+						submitCmd(alias, description, action),
+						exitFormCmd(),
+					)
+
+				}
+
+				m.previous = ""
 			}
 		}
 	}

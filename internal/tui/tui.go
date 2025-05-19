@@ -63,6 +63,16 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var result tea.Model
 
 	switch msg := msg.(type) {
+	case editMsg:
+		m.focus = focusForm
+		m.form.previous = msg.payload.Name
+		m.form.alias.input = msg.payload.Name
+		m.form.description.input = msg.payload.Description
+		m.form.action.input = msg.payload.Action
+		m.form.focus = focusFormAlias
+	case delFromItems:
+		result, cmd = m.actionList.Update(msg)
+		m.actionList = result.(listModel)
 	case delFromStoreMsg:
 		cmd = deleteFromStoreCmd(msg.alias)
 	case searchForInputMsg, updateActionListMsg:
@@ -157,6 +167,7 @@ func Start(cmds []cmdstore.Command) (cmdstore.Command, error) {
 			viewPortLengthCur: min(len(cmds), appViewPortLength),
 		},
 		form: formModel{
+			previous:    "",
 			alias:       input{"", 0},
 			description: input{"", 0},
 			action:      input{"", 0},

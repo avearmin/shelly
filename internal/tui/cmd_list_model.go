@@ -48,6 +48,8 @@ var (
 
 type updateActionListMsg struct{ payload cmdstore.Command }
 type delFromStoreMsg struct{ alias string }
+type delFromItems struct{ alias string }
+type editMsg struct{ payload cmdstore.Command }
 type growViewPortMsg struct{}
 
 type listModel struct {
@@ -82,6 +84,13 @@ func (m listModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.filterIndex = 0
 		m.viewPortStart = 0
 		m.viewPortLengthCur = min(m.viewPortLengthMax, len(m.filteredItems))
+	case delFromItems:
+		m.items = slices.DeleteFunc(m.items, func(action cmdstore.Command) bool {
+			return action.Name == msg.alias
+		})
+		return m, func() tea.Msg {
+			return resendSearchMsg{}
+		}
 	case tea.KeyMsg:
 		if msg.String() == "up" || msg.String() == "k" {
 			if m.viewPortStart == m.cursor+m.viewPortStart {
@@ -113,6 +122,11 @@ func (m listModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 			m.filterIndex = mod(m.filterIndex+1, len(m.filteredItems))
 			return m, nil
+		}
+		if msg.String() == "e" {
+			return m, func() tea.Msg {
+				return editMsg{m.filteredItems[m.filterIndex]}
+			}
 		}
 		if msg.String() == "d" {
 			if len(m.filteredItems) == 0 || len(m.items) == 0 {
@@ -223,7 +237,6 @@ func filter(s string, items []cmdstore.Command) []cmdstore.Command {
 		}
 	}
 
-	
 	slices.SortFunc(filteredItems, func(x, y cmdstore.Command) int {
 		switch {
 		case x.LastUsed.After(y.LastUsed):
