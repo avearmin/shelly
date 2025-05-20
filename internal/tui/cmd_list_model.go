@@ -176,6 +176,7 @@ func (m listModel) View() string {
 		b.WriteString(bar.Render(" ") + descriptionStyle.Render(v.Description) + "\n")
 		b.WriteString(bar.Render(" ") + commandStyle.Render(v.Action) + "\n")
 		b.WriteString(bar.Render(" ") + lastUsedStyleFor(v.LastUsedInHumanTerms()) + "\n")
+		b.WriteString(bar.Render(" ") + fmt.Sprintf("used %d times", v.UseCount) + "\n")
 		b.WriteString("\n")
 	}
 	b.WriteString(fmt.Sprintf("%d/%d", m.filterIndex+1, len(m.filteredItems)))

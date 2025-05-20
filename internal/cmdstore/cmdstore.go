@@ -12,6 +12,7 @@ type Command struct {
 	Name        string    `json:"name"`
 	Description string    `json:"description"`
 	LastUsed    time.Time `json:"last_used"`
+	UseCount    int       `json:"use_count"`
 	Action      string    `json:"action"`
 	Scope       string    `json:"scope"`
 }

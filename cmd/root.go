@@ -50,6 +50,7 @@ var rootCmd = &cobra.Command{
 		}
 
 		selectedCmd.LastUsed = time.Now()
+		selectedCmd.UseCount += 1
 		cmds[selectedCmd.Name] = selectedCmd
 		if err := cmdstore.Save(config.CmdsPath, cmds); err != nil {
 			fmt.Println(err)
